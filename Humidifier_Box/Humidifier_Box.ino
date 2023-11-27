@@ -9,46 +9,75 @@ typedef struct {
   bool power;
   int temp;
   int humidity;
-} HUM;
+  bool changed;
+} DATA;
 
-HUM humidifier = {
-  true,
-  0,
-  0
-};
+DATA currentDate;
+DATA receivedData;
+
+int button = 7;//임의로 7로 정함
+int humidifier = 6;//임의로 6로 정함
 
 void setup() {
   Serial.begin(9600);
   radio.begin();
 }
-
 void loop() {
+  detectButton();
+  detectSignal();
+  actByData();
+}
+
+bool prv_value
+void detectButton(){
+  bool readValue = digitalRead(button);
+  if(prv_value!=readValue&&readValue==false)
+  {
+    currentDate.power = !currentDate.power;
+    currentDate.changed = true;
+  }
+  prv_value = readValue;
+}
+void detectSignal(){
   setReceiveMode();
   if (radio.available()) {
     Serial.println("Data received");
-    radio.read(&humidifier, sizeof(HUM));
-    processHumidifityData();
-    setSendMode();
-    radio.write(&humidifier, sizeof(HUM));
+    char request[4];
+    radio.read(&request, sizeof(request));
+    if(strcmp(request, "get")==0)
+    {
+      delay(500);
+      setSendMode();
+      radio.write(&currentDate, sizeof(DATA));
+      currentDate.changed = false;
+    }
+    else if(strcmp(request, "put")==0)
+    {
+      setReceiveMode();
+      radio.read(&receivedData, sizeof(DATA));
+      //if(receivedData.changed)currentData=receivedData;
+      currentData=receivedData;
+    }
   }
 }
-
-void processHumidifityData() {
-  // 랜덤한 온도와 습도 값을 생성합니다.
-  humidifier.temp = random(15, 30); // 온도를 15 ~ 30도 사이로 설정
-  humidifier.humidity = random(30, 80); // 습도를 30% ~ 80% 사이로 설정
+void actPower(bool p){
+  digitalWrite(humidifier, p);
 }
 
+void actByData() {
+  actPower(currentData.power[i]);
+  Serial.println("-----");
+}
 void setSendMode(){
   radio.openWritingPipe(address);
   radio.setPALevel(RF24_PA_MIN);
   radio.stopListening();
-  Serial.println("Send mode set");
+  //Serial.println("Send mode set");
 }
 
 void setReceiveMode(){
   radio.openReadingPipe(0, address);
   radio.setPALevel(RF24_PA_MIN);
   radio.startListening();
-  Serial.println("Receive mode set");
+  //Serial.println("Receive mode set");
 }
