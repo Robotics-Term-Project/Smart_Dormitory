@@ -45,7 +45,6 @@ void setup() {
   servos[1].prv_value = false;
   servos[2].prv_value = false;
 
-
   currentData = {{0,0,0}};
   receivedData = {{0,0,0}};
   //processSwitchData();
